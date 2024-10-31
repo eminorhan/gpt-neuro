@@ -13,8 +13,9 @@ dp_degree, dp_rank = 1, 0
 class TestDataLoader:
     dataset = "willett"
     dataset_path = ""
-    batch_size = 1
+    batch_size = 2
     seq_len = 131072
+    vocab_size = 64
 
 # build dataloader
 data_loader = build_hf_data_loader(
@@ -22,6 +23,7 @@ data_loader = build_hf_data_loader(
     TestDataLoader.dataset_path,
     TestDataLoader.batch_size,
     TestDataLoader.seq_len,
+    TestDataLoader.vocab_size,
     dp_degree,
     dp_rank,
 )

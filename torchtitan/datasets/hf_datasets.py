@@ -15,7 +15,7 @@ from torch.utils.data import IterableDataset
 from torchdata.stateful_dataloader import StatefulDataLoader
 from torchtitan.logging import logger
 
-from datasets import Dataset, load_dataset
+from datasets import Dataset
 from datasets import IterableDataset as HFIterableDataset
 from datasets.distributed import split_dataset_by_node
 
@@ -25,10 +25,11 @@ _supported_datasets = {
 }
 
 
-def build_generator(data):
+def build_generator(data, vocab_size):
     def generator():
         for item in data:
-            yield {'data': item.flatten().tolist()}  # TODO: add more preprocessing here
+            new_item = np.concatenate((np.full((item.shape[0], 1), vocab_size-1), item))  # add bos/eos tokens
+            yield {'data': new_item.flatten().tolist()}  # TODO: add more preprocessing here
     return generator
 
 
@@ -87,6 +88,7 @@ class HuggingFaceDataset(IterableDataset, Stateful):
         dataset_name: str,
         dataset_path: Optional[str],
         seq_len: int = 2048,
+        vocab_size: int = 64,
         world_size: int = 1,
         rank: int = 0,
         infinite: bool = False,
@@ -104,7 +106,7 @@ class HuggingFaceDataset(IterableDataset, Stateful):
 
         if dataset_name == "willett":
             np_data = np.load(_supported_datasets[dataset_name], allow_pickle=True)['tx1']  # FIXME: a bit ad-hoc
-            ds = HFIterableDataset.from_generator(_DatasetGeneratorPickleHack(build_generator(np_data)))
+            ds = HFIterableDataset.from_generator(_DatasetGeneratorPickleHack(build_generator(np_data, vocab_size)))
         else:
             pass
 
@@ -192,10 +194,11 @@ def build_hf_data_loader(
     dataset_path: Optional[str],
     batch_size: int,
     seq_len: int,
+    vocab_size: int,
     world_size,
     rank,
     infinite: bool = True,
 ):
-    hf_ds = HuggingFaceDataset(dataset_name, dataset_path, seq_len, world_size, rank, infinite)
+    hf_ds = HuggingFaceDataset(dataset_name, dataset_path, seq_len, vocab_size, world_size, rank, infinite)
 
     return DPAwareDataLoader(rank, hf_ds, batch_size=batch_size)

@@ -167,12 +167,6 @@ class JobConfig:
             default="rmsnorm",
             help="Type of layer normalization to use [layernorm, np_layernorm, rmsnorm, fused_rmsnorm]",
         )
-        self.parser.add_argument(
-            "--model.tokenizer_path",
-            type=str,
-            default="./torchtitan/datasets/tokenizer/tokenizer.model",
-            help="Tokenizer path",
-        )
 
         # optimizer configs
         self.parser.add_argument(
@@ -204,6 +198,9 @@ class JobConfig:
         )
         self.parser.add_argument(
             "--training.seq_len", type=int, default=2048, help="Sequence length"
+        )
+        self.parser.add_argument(
+            "--training.vocab_size", type=int, default=64, help="Vocabulary size"
         )
         self.parser.add_argument(
             "--training.warmup_steps",
@@ -265,6 +262,8 @@ class JobConfig:
             action="store_true",
             help="Whether to apply loss parallel when sequence parallel is enabled",
         )
+
+        # experimental
         self.parser.add_argument(
             "--experimental.enable_async_tensor_parallel",
             default=False,
@@ -581,7 +580,6 @@ class JobConfig:
         # TODO: Add more mandatory validations
         assert self.model.name
         assert self.model.flavor
-        assert self.model.tokenizer_path
 
     def parse_args_from_command_line(self, args_list) -> Tuple[argparse.Namespace, argparse.Namespace]:
         """

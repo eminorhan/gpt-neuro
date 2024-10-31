@@ -15,11 +15,11 @@ from torch.distributed.elastic.multiprocessing.errors import record
 from torchtitan import utils
 from torchtitan.checkpoint import CheckpointManager, TrainState
 from torchtitan.config_manager import JobConfig
-from torchtitan.datasets import build_hf_data_loader, build_tokenizer
+from torchtitan.datasets import build_hf_data_loader
 from torchtitan.float8 import Float8Handler
 from torchtitan.logging import init_logger, logger
 from torchtitan.metrics import build_gpu_memory_monitor, build_metric_logger
-from torchtitan.models import model_name_to_cls, model_name_to_tokenizer, models_config
+from torchtitan.models import model_name_to_cls, models_config
 from torchtitan.optimizer import build_lr_schedulers, build_optimizers
 from torchtitan.parallelisms import models_parallelize_fns, models_pipelining_fns, ParallelDims
 from torchtitan.profiling import maybe_enable_memory_snapshot, maybe_enable_profiling
@@ -84,16 +84,13 @@ def main(job_config: JobConfig):
 
     model_name = job_config.model.name
 
-    # build tokenizer
-    tokenizer_type = model_name_to_tokenizer[model_name]
-    tokenizer = build_tokenizer(tokenizer_type, job_config.model.tokenizer_path)
-
     # build dataloader
     data_loader = build_hf_data_loader(
         job_config.training.dataset,
         job_config.training.dataset_path,
         job_config.training.batch_size,
         job_config.training.seq_len,
+        job_config.training.vocab_size,
         dp_degree,
         dp_rank,
     )
@@ -103,10 +100,9 @@ def main(job_config: JobConfig):
     model_config = models_config[model_name][job_config.model.flavor]
     # set the model configs from training inputs:
     # 1. norm type to decide which norm layer to use
-    # 2. vocab size from tokenizer
-    # 3. max_seq_len base on inputs
+    # 2. max_seq_len base on inputs
     model_config.norm_type = job_config.model.norm_type
-    model_config.vocab_size = tokenizer.n_words
+    model_config.vocab_size = job_config.training.vocab_size
     model_config.max_seq_len = job_config.training.seq_len
 
     logger.info(f"Building {model_name} {job_config.model.flavor} with {model_config}")
