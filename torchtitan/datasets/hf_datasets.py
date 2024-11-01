@@ -86,6 +86,7 @@ class HuggingFaceDataset(IterableDataset, Stateful):
         self._data = split_dataset_by_node(ds, rank, world_size)
         self.dataset_name = dataset_name
         self.seq_len = seq_len
+        self.vocab_size = vocab_size
         self.infinite = infinite
 
         # variables for checkpointing
@@ -98,8 +99,10 @@ class HuggingFaceDataset(IterableDataset, Stateful):
         while True:
             for sample in self._get_data_iter():
                 # NOTE: we assume `samples` are already tokenized
-                # TODO: add bos/eos tokens
-                sample = np.array(sample['tx1']).flatten().tolist()  # FIXME: ad-hoc
+                # FIXME: ad-hoc
+                sample = np.array(sample['tx1'])
+                sample = np.concatenate((np.full((sample.shape[0], 1), self.vocab_size-1), sample))  # add bos/eos token
+                sample = sample.flatten().tolist()  
                 self._all_tokens.extend(sample)
                 self._sample_idx += 1
 
@@ -109,8 +112,6 @@ class HuggingFaceDataset(IterableDataset, Stateful):
                     self._all_tokens = self._all_tokens[max_buffer_token_len:]
                     input = x[:-1]
                     label = x[1:]
-                    print(f"Shapes: {input.shape} {label.shape}")
-                    print(f"Dtypes: {input.dtype} {label.dtype}")
                     yield input, label
 
             if not self.infinite:
