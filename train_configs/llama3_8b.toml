@@ -25,8 +25,8 @@ lr = 3e-4
 
 [training]
 batch_size = 1
-seq_len = 8192
-vocab_size = 64
+seq_len = 65536
+vocab_size = 256
 warmup_steps = 1000  # lr scheduler warm up
 max_norm = 1.0  # grad norm clipping
 steps = 150000

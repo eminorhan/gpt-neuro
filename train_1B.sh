@@ -4,9 +4,9 @@
 #SBATCH --nodes=16
 #SBATCH --gpus-per-node=8
 #SBATCH --cpus-per-task=8
-#SBATCH --time=00:10:00
-#SBATCH --job-name=train_llama_1B
-#SBATCH --output=train_llama_1B_%A_%a.out
+#SBATCH --time=00:05:00
+#SBATCH --job-name=train_gpt_neuro_1B
+#SBATCH --output=train_gpt_neuro_1B_%A_%a.out
 #SBATCH --array=0
 #SBATCH --qos=debug
 

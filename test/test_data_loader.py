@@ -31,9 +31,10 @@ data_loader = build_hf_data_loader(
 # create iterator
 data_iterator = iter(data_loader)
 
-for i in range(10):
+for i in range(33):
     batch = next(data_iterator)
     inputs, labels = batch
     print(f'Input shape: {inputs.shape}')
+    print(f'Input dtype: {inputs.dtype}')
     print(f'Input max: {inputs.max()}')
     print(f'Input min: {inputs.min()}')

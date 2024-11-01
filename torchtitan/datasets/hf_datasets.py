@@ -15,40 +15,13 @@ from torch.utils.data import IterableDataset
 from torchdata.stateful_dataloader import StatefulDataLoader
 from torchtitan.logging import logger
 
-from datasets import Dataset
-from datasets import IterableDataset as HFIterableDataset
+from datasets import Dataset, load_dataset
 from datasets.distributed import split_dataset_by_node
 
 # map from dataset name to a local directory, or a dataset repository on the HF hub
 _supported_datasets = {
-    "willett": "/lustre/orion/stf218/scratch/emin/data/bci/willett/val.npz",
+    "willett": "eminorhan/willett",
 }
-
-
-def build_generator(data, vocab_size):
-    def generator():
-        for item in data:
-            new_item = np.concatenate((np.full((item.shape[0], 1), vocab_size-1), item))  # add bos/eos tokens
-            yield {'data': new_item.flatten().tolist()}  # TODO: add more preprocessing here
-    return generator
-
-
-# Hack from: https://github.com/huggingface/datasets/issues/6194#issuecomment-1708080653
-class _DatasetGeneratorPickleHack:
-    def __init__(self, generator, generator_id=None):
-        self.generator = generator
-        self.generator_id = generator_id if generator_id is not None else str(uuid.uuid4())
-
-    def __call__(self, *args, **kwargs):
-        return self.generator(*args, **kwargs)
-
-    def __reduce__(self):
-        return (_DatasetGeneratorPickleHack_raise, (self.generator_id,))
-
-
-def _DatasetGeneratorPickleHack_raise(*args, **kwargs):
-    raise AssertionError("cannot unpickle _DatasetGeneratorPickleHack!")
-
 
 class HuggingFaceDataset(IterableDataset, Stateful):
     """PyTorch Representation of the HuggingFace Dataset.
@@ -105,8 +78,7 @@ class HuggingFaceDataset(IterableDataset, Stateful):
         logger.info(f"Preparing {dataset_name} dataset from {dataset_path}")
 
         if dataset_name == "willett":
-            np_data = np.load(_supported_datasets[dataset_name], allow_pickle=True)['tx1']  # FIXME: a bit ad-hoc
-            ds = HFIterableDataset.from_generator(_DatasetGeneratorPickleHack(build_generator(np_data, vocab_size)))
+            ds = load_dataset(dataset_path, split="train", trust_remote_code=True)
         else:
             pass
 
@@ -126,7 +98,8 @@ class HuggingFaceDataset(IterableDataset, Stateful):
         while True:
             for sample in self._get_data_iter():
                 # NOTE: we assume `samples` are already tokenized
-                sample = sample['data']
+                # TODO: add bos/eos tokens
+                sample = np.array(sample['tx1']).flatten().tolist()  # FIXME: ad-hoc
                 self._all_tokens.extend(sample)
                 self._sample_idx += 1
 
@@ -136,6 +109,8 @@ class HuggingFaceDataset(IterableDataset, Stateful):
                     self._all_tokens = self._all_tokens[max_buffer_token_len:]
                     input = x[:-1]
                     label = x[1:]
+                    print(f"Shapes: {input.shape} {label.shape}")
+                    print(f"Dtypes: {input.dtype} {label.dtype}")
                     yield input, label
 
             if not self.infinite:

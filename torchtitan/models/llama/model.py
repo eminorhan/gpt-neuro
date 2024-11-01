@@ -361,7 +361,6 @@ class Transformer(nn.Module):
             self.layers[str(layer_id)] = TransformerBlock(layer_id, model_args)
 
         self.norm = build_norm(model_args.norm_type, dim=model_args.dim, eps=model_args.norm_eps)
-
         self.output = nn.Linear(model_args.dim, model_args.vocab_size, bias=False)
         self.init_weights()
 
@@ -417,7 +416,6 @@ class Transformer(nn.Module):
         """
         # passthrough for nonexistent layers, allows easy configuration of pipeline parallel stages
         h = self.tok_embeddings(tokens) if self.tok_embeddings else tokens
-
         for layer in self.layers.values():
             h = layer(h, self.freqs_cis)
 
