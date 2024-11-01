@@ -101,7 +101,7 @@ class HuggingFaceDataset(IterableDataset, Stateful):
                 # NOTE: we assume `samples` are already tokenized
                 # FIXME: ad-hoc
                 sample = np.array(sample['tx1'])
-                sample = np.concatenate((np.full((sample.shape[0], 1), self.vocab_size-1), sample))  # add bos/eos token
+                sample = np.concatenate((np.full((sample.shape[0], 1), self.vocab_size-1), sample), axis=1)  # add bos/eos token
                 sample = sample.flatten().tolist()  
                 self._all_tokens.extend(sample)
                 self._sample_idx += 1
