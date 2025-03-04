@@ -4,7 +4,6 @@
 # This source code is licensed under the BSD-style license found in the
 # LICENSE file in the root directory of this source tree.
 
-import uuid
 import pickle
 import numpy as np
 from typing import Any, Dict, List, Optional
@@ -64,7 +63,7 @@ class HuggingFaceDataset(IterableDataset, Stateful):
         vocab_size: int = 64,
         world_size: int = 1,
         rank: int = 0,
-        infinite: bool = False,
+        infinite: bool = True,
     ) -> None:
         # allow user to pass in a (local or HF hub) path to use unsupported datasets
         if dataset_name not in _supported_datasets:
@@ -82,7 +81,7 @@ class HuggingFaceDataset(IterableDataset, Stateful):
         else:
             pass
 
-        # TODO: support shuffling
+        # TODO: possibly support shuffling
         self._data = split_dataset_by_node(ds, rank, world_size)
         self.dataset_name = dataset_name
         self.seq_len = seq_len
@@ -115,23 +114,24 @@ class HuggingFaceDataset(IterableDataset, Stateful):
                     yield input, label
 
             if not self.infinite:
-                # logger.warning(f"Dataset {self.dataset_name} has run out of data")
+                logger.warning(f"Dataset {self.dataset_name} has run out of data")
                 break
             else:
                 # reset offset for the next iteration
                 self._sample_idx = 0
-                # logger.warning(f"Dataset {self.dataset_name} is being re-looped")
+                logger.warning(f"Dataset {self.dataset_name} is being re-looped")
 
     def _get_data_iter(self):
-        if self._sample_idx == 0:
-            return iter(self._data)
-
-        # As skipping to the end throws an error in case of map-style dataset, return an empty iterator
+        # as skipping to the end throws an error in case of map-style dataset, return an empty iterator
         if isinstance(self._data, Dataset) and self._sample_idx == len(self._data):
             return iter([])
 
-        return iter(self._data.skip(self._sample_idx))
+        it = iter(self._data)
+        for _ in range(self._sample_idx):
+            next(it)
 
+        return it
+    
     def load_state_dict(self, state_dict):
         self._sample_idx = state_dict["sample_idx"]
         self._all_tokens = state_dict["token_buffer"]
