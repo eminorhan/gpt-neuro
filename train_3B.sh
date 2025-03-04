@@ -19,7 +19,7 @@ export no_proxy='localhost,127.0.0.0/8,*.ccs.ornl.gov'
 
 # set misc env vars
 export LOGLEVEL=INFO
-export LD_LIBRARY_PATH=/lustre/orion/stf218/scratch/emin/aws-ofi-rccl/lib:$LD_LIBRARY_PATH  # enable aws-ofi-rccl
+export LD_LIBRARY_PATH=/lustre/orion/stf218/scratch/emin/container/aws-ofi-rccl/lib:$LD_LIBRARY_PATH  # enable aws-ofi-rccl
 export NCCL_NET_GDR_LEVEL=3   # can improve performance, but remove this setting if you encounter a hang/crash.
 export NCCL_ALGO=TREE         # may see performance difference with either setting. (should not need to use this, but can try)
 export NCCL_CROSS_NIC=1       # on large systems, this nccl setting has been found to improve performance
