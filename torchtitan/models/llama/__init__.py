@@ -22,15 +22,6 @@ llama3_configs = {
         multiple_of=1024,
         rope_theta=500000,
     ),
-    "3B": ModelArgs(
-        dim=3072,
-        n_layers=28,
-        n_heads=24,
-        n_kv_heads=8,
-        ffn_dim_multiplier=1.3,
-        multiple_of=1024,
-        rope_theta=500000,
-    ),
     "8B": ModelArgs(
         dim=4096,
         n_layers=32,
@@ -39,23 +30,5 @@ llama3_configs = {
         ffn_dim_multiplier=1.3,
         multiple_of=1024,
         rope_theta=500000,
-    ),
-    "70B": ModelArgs(
-        dim=8192,
-        n_layers=80,
-        n_heads=64,
-        n_kv_heads=8,
-        ffn_dim_multiplier=1.3,
-        multiple_of=4096,
-        rope_theta=500000,
-    ),
-    "405B": ModelArgs(
-        dim=16384,
-        n_layers=126,
-        n_heads=128,
-        n_kv_heads=8,
-        ffn_dim_multiplier=1.2,
-        multiple_of=4096,
-        rope_theta=500000,
-    ),
+    )
 }

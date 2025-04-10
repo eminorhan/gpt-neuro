@@ -9,7 +9,7 @@ import os
 import subprocess
 from dataclasses import dataclass
 from datetime import timedelta
-from typing import Union
+from typing import Union, Optional
 
 import torch
 import torch.distributed._functional_collectives as funcol
@@ -32,6 +32,28 @@ def _warn_overwrite_env(env, val):
     if env in os.environ:
         logger.warning(f"ENV[{env}] = {os.environ[env]} will be overridden to {val} based on job config")
     os.environ[env] = val
+
+
+def set_determinism(seed: Optional[int]) -> None:
+    """
+    Set Python, PyTorch, CUDA seeds and cudnn settings for reproducibility
+    """
+    if seed is not None:
+        # CPU and GPU determinism
+        torch.manual_seed(seed)
+        # set deterministic cudnn algorithms
+        torch.backends.cudnn.deterministic = True
+        torch.backends.cudnn.benchmark = False
+        # set Python seed
+        os.environ["PYTHONHASHSEED"] = str(seed)
+        torch.use_deterministic_algorithms(True)
+        # env var for deterministic CuBLAS
+        # https://pytorch.org/docs/stable/generated/torch.use_deterministic_algorithms.html
+        os.environ["CUBLAS_WORKSPACE_CONFIG"] = ":4096:8"
+    else:
+        # ensure we turn off deterministic cudnn algorithms
+        torch.backends.cudnn.deterministic = False
+        torch.backends.cudnn.benchmark = True
 
 
 def set_pg_timeouts(timeout, world_mesh):
@@ -125,7 +147,7 @@ def get_num_flop_per_token(num_params: int, model_config, seq_len) -> int:
     return flop_per_token
 
 
-# hardcoded BF16 type peak flops for NVIDIA A100 and H100 GPU
+# hardcoded BF16 type peak flops for popular NVIDIA and AMD GPUs
 def get_peak_flops(device_name: str) -> int:
     try:
         # Run the lspci command and capture the output
@@ -152,8 +174,11 @@ def get_peak_flops(device_name: str) -> int:
             return 756e12
         else:  # for H100 SXM and other variants
             return 989e12
-    else:  # for other GPU types, assume A100
-        return 312e12
+    elif "MI250X" in device_name:
+        # data from https://www.amd.com/en/products/accelerators/instinct/mi200/mi250x.html
+        return 191.5e12  # per GCD
+    else:  # for other GPU types, assume MI250X
+        return 191.5e12
 
 
 @dataclass(frozen=True)

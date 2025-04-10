@@ -1,8 +1,8 @@
 # torchtitan Config.toml
 
 [job]
-dump_folder = "./outputs"
-description = "Llama 3 1B training"
+dump_folder = "./outputs/rodent_8B_131k"
+description = "Rodent-8B-131k training"
 
 [profiling]
 enable_profiling = false
@@ -16,37 +16,37 @@ save_tb_folder = "tb"
 
 [model]
 name = "llama3"
-flavor = "1B"
-norm_type = "layernorm"  # layernorm / np_layernorm / rmsnorm / fused_rmsnorm
+flavor = "8B"
+norm_type = "rmsnorm"  # layernorm / np_layernorm / rmsnorm / fused_rmsnorm
 
 [optimizer]
 name = "AdamW"
 lr = 3e-4
 
 [training]
-batch_size = 1
+batch_size = 4
 seq_len = 131072
 vocab_size = 256
-warmup_steps = 200  # lr scheduler warm up
+warmup_steps = 1000  # lr scheduler warm up
 max_norm = 1.0  # grad norm clipping
-steps = 1000
-data_parallel_replicate_degree = 1
-data_parallel_shard_degree = 16
+steps = 50000  # number of training steps
+data_parallel_replicate_degree = 2
+data_parallel_shard_degree = 32
 tensor_parallel_degree = 8
 compile = true
-dataset = "willett"
+dataset = "rodent"
 
 [experimental]
 pipeline_parallel_degree = 1
 
 [checkpoint]
-enable_checkpoint = false
+enable_checkpoint = true
 folder = "checkpoint"
 interval_type = "steps"
-interval = 500
+interval = 10
 model_weights_only = false
 export_dtype = "bfloat16"
-async_mode = "disabled"  # ["disabled", "async", "async_with_pinned_mem"]
+async_mode = "async"  # ["disabled", "async", "async_with_pinned_mem"]
 
 [activation_checkpoint]
 mode = 'full'  # ['none', 'selective', 'full']

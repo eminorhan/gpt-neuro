@@ -167,6 +167,12 @@ class JobConfig:
             default="rmsnorm",
             help="Type of layer normalization to use [layernorm, np_layernorm, rmsnorm, fused_rmsnorm]",
         )
+        self.parser.add_argument(
+            "--model.tokenizer_path",
+            type=str,
+            default="./torchtitan/datasets/tokenizer/tokenizer.model",
+            help="Tokenizer path",
+        )
 
         # optimizer configs
         self.parser.add_argument(
@@ -198,9 +204,6 @@ class JobConfig:
         )
         self.parser.add_argument(
             "--training.seq_len", type=int, default=2048, help="Sequence length"
-        )
-        self.parser.add_argument(
-            "--training.vocab_size", type=int, default=64, help="Vocabulary size"
         )
         self.parser.add_argument(
             "--training.warmup_steps",
@@ -262,8 +265,6 @@ class JobConfig:
             action="store_true",
             help="Whether to apply loss parallel when sequence parallel is enabled",
         )
-
-        # experimental
         self.parser.add_argument(
             "--experimental.enable_async_tensor_parallel",
             default=False,
@@ -355,6 +356,18 @@ class JobConfig:
             type=int,
             default=50,
             help="Python garbage control scheduling interval, in steps",
+        )
+        self.parser.add_argument(
+            "--training.seed",
+            type=int,
+            default=None,
+            help="Implement reproducibility by setting a Python, PyTorch and CUDA seed",
+        )
+        self.parser.add_argument(
+            "--training.shuffle_seed",
+            type=int,
+            default=None,
+            help="Random seed to shuffle datasets",
         )
 
         # checkpointing configs
@@ -509,22 +522,19 @@ class JobConfig:
         self.parser.add_argument(
             "--comm.init_timeout_seconds",
             type=int,
-            default=300,
-            help="Timeout for communication operations, during initialization and first train step.",
+            default=3600,
+            help="Timeout for communication operations, during initialization and first train step (default: 1 hour).",
         )
         self.parser.add_argument(
             "--comm.train_timeout_seconds",
             type=int,
-            default=100,
-            help=(
-                "Timeout for communication operations after the first train step -- "
-                "usually a tighter bound than during initialization."
-            ),
+            default=1200,
+            help="Timeout for communication operations after the first train step -- usually a tighter bound than during initialization.",
         )
         self.parser.add_argument(
             "--comm.trace_buf_size",
             type=int,
-            default=20000,
+            default=0,
             help="Flight recorder ring buffer size, >0 means recording by default, 0 means disabled",
         )
 
@@ -580,6 +590,7 @@ class JobConfig:
         # TODO: Add more mandatory validations
         assert self.model.name
         assert self.model.flavor
+        assert self.model.tokenizer_path
 
     def parse_args_from_command_line(self, args_list) -> Tuple[argparse.Namespace, argparse.Namespace]:
         """

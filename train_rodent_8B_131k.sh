@@ -1,12 +1,13 @@
 #!/bin/bash
 
 #SBATCH --account=stf218
-#SBATCH --nodes=32
+##SBATCH --partition=extended
+#SBATCH --nodes=64
 #SBATCH --gpus-per-node=8
 #SBATCH --cpus-per-task=8
-#SBATCH --time=00:10:00
-#SBATCH --job-name=train_gpt_neuro_8B
-#SBATCH --output=train_gpt_neuro_8B_%A_%a.out
+#SBATCH --time=02:00:00
+#SBATCH --job-name=train_rodent_8B_131k
+#SBATCH --output=train_rodent_8B_131k_%A_%a.out
 #SBATCH --array=0
 #SBATCH --qos=debug
 
@@ -27,7 +28,6 @@ export NCCL_SOCKET_IFNAME=hsn0
 export GLOO_SOCKET_IFNAME=hsn0
 export NCCL_IB_TIMEOUT=31
 export TORCH_NCCL_BLOCKING_WAIT=1
-export TORCH_NCCL_ASYNC_ERROR_HANDLING=1
 export TORCHELASTIC_ENABLE_FILE_TIMER=1
 export OMP_NUM_THREADS=1
 export PYTORCH_CUDA_ALLOC_CONF="expandable_segments:True"
@@ -40,7 +40,7 @@ export GPUS_PER_NODE=8
 export MASTER_ADDR=$(scontrol show hostnames $SLURM_JOB_NODELIST | head -n 1)
 export MASTER_PORT=3442
 
-CONFIG_FILE=${CONFIG_FILE:-"./train_configs/llama3_8b.toml"}
+CONFIG_FILE=${CONFIG_FILE:-"./train_configs/rodent_8b_131k.toml"}
 
 srun torchrun --nnodes $SLURM_NNODES --nproc_per_node 8 --max_restarts 9 --node_rank $SLURM_NODEID --rdzv_id 101 --rdzv_backend c10d --rdzv_endpoint "$MASTER_ADDR:$MASTER_PORT" ./train.py --job.config_file ${CONFIG_FILE}
 

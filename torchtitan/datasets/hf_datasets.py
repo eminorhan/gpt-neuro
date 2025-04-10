@@ -14,12 +14,13 @@ from torch.utils.data import IterableDataset
 from torchdata.stateful_dataloader import StatefulDataLoader
 from torchtitan.logging import logger
 
-from datasets import Dataset, load_dataset
+from datasets import Dataset, load_dataset, load_from_disk, interleave_datasets
 from datasets.distributed import split_dataset_by_node
 
 # map from dataset name to a local directory, or a dataset repository on the HF hub
 _supported_datasets = {
-    "willett": "eminorhan/willett",
+    "rodent": "eminorhan/neural-bench-rodent",
+    "primate": "eminorhan/neural-bench-primate",
 }
 
 class HuggingFaceDataset(IterableDataset, Stateful):
@@ -35,32 +36,14 @@ class HuggingFaceDataset(IterableDataset, Stateful):
         rank (int): rank of the current data parallel process
         infinite (bool): whether to loop infinitely over the dataset
 
-    We currently support the c4 dataset, and a subset of it for testing purposes:
-    c4_test (2K training entries)
-    c4 (177M training entries - this dataset is streamed due to the size)
-
-    >> c4 (EN) <<:
-    c4 cleaned, English version
-    Data input format (c4):
-    {
-    'url': 'https://klyq.com/beginners-bbq-class-taking-place-in-missoula/',
-    'text': 'Beginners BBQ Class Taking Place in Missoula!\nDo you want to get better at ...',
-    'timestamp': '2019-04-25T12:57:54Z'
-    }
-
-    Example use (c4):
-    >>> ds = HuggingFaceDataset(dataset_name="c4", dataset_path=None)
-    >>> for batch in Dataloader(ds, batch_size=8):
-            print(f"Batch size: {len(batch)}")
-        Batch size: 8
     """
 
     def __init__(
         self,
         dataset_name: str,
         dataset_path: Optional[str],
-        seq_len: int = 2048,
-        vocab_size: int = 64,
+        seq_len: int = 131072,
+        vocab_size: int = 256,
         world_size: int = 1,
         rank: int = 0,
         infinite: bool = True,
@@ -75,13 +58,9 @@ class HuggingFaceDataset(IterableDataset, Stateful):
         if not dataset_path:
             dataset_path = _supported_datasets[dataset_name]
         logger.info(f"Preparing {dataset_name} dataset from {dataset_path}")
+        ds = load_dataset(dataset_path, split="train")
 
-        if dataset_name == "willett":
-            ds = load_dataset(dataset_path, split="train", trust_remote_code=True)
-        else:
-            pass
-
-        # TODO: possibly support shuffling
+        # NOTE: datasets are pre-shuffled
         self._data = split_dataset_by_node(ds, rank, world_size)
         self.dataset_name = dataset_name
         self.seq_len = seq_len
@@ -97,15 +76,16 @@ class HuggingFaceDataset(IterableDataset, Stateful):
 
         while True:
             for sample in self._get_data_iter():
-                # NOTE: we assume `samples` are already tokenized
-                # FIXME: ad-hoc
-                sample = np.array(sample['tx1'])
-                sample = np.concatenate((np.full((sample.shape[0], 1), self.vocab_size-1), sample), axis=1)  # add bos/eos token
-                sample = sample.flatten().tolist()  
+                sample = np.array(sample['spike_counts'])
+                # print(f"Sample dtype-1 / shape: {sample.dtype} / {sample.shape}")
+                sample = np.concatenate((np.full((1, sample.shape[1]), self.vocab_size-1), sample), axis=0)
+                # print(f"Sample dtype-2 / shape: {sample.dtype} / {sample.shape}") 
+                sample = sample.T.flatten().tolist()  
                 self._all_tokens.extend(sample)
                 self._sample_idx += 1
 
                 while len(self._all_tokens) >= max_buffer_token_len:
+                    # print(f"_all_tokens length: {len(self._all_tokens)}")
                     x = torch.LongTensor(self._all_tokens[:max_buffer_token_len])
                     # update tokens to the remaining tokens
                     self._all_tokens = self._all_tokens[max_buffer_token_len:]
