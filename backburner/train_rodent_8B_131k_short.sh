@@ -1,15 +1,15 @@
 #!/bin/bash
 
 #SBATCH --account=stf218
-#SBATCH --partition=extended
+##SBATCH --partition=extended
 #SBATCH --nodes=64
 #SBATCH --gpus-per-node=8
 #SBATCH --cpus-per-task=8
-#SBATCH --time=24:00:00
-#SBATCH --job-name=train_rodent_8B_131k
-#SBATCH --output=train_rodent_8B_131k_%A_%a.out
+#SBATCH --time=00:10:00
+#SBATCH --job-name=train_rodent_8B_131k_short
+#SBATCH --output=train_rodent_8B_131k_short_%A_%a.out
 #SBATCH --array=0
-##SBATCH --qos=debug
+#SBATCH --qos=debug
 
 # set proxy server to enable communication with outside
 export all_proxy=socks://proxy.ccs.ornl.gov:3128/

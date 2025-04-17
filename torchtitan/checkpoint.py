@@ -408,15 +408,23 @@ class CheckpointManager:
         original_stateful_states = {k: v for k, v in states.items() if isinstance(v, Stateful)}
         logger.info(f"Loading the checkpoint at step {step}.")
         begin = time.monotonic()
+
         dcp.load(
             states, 
             planner=dcp.DefaultLoadPlanner(allow_partial_load=True), 
             checkpoint_id=self._create_checkpoint_id(step), process_group=self.pg
             )
+            
         logger.info(f"Finished loading the checkpoint in {time.monotonic() - begin:.2f} seconds.")
         # bugfix from above: restore the original stateful objects,
         # whose states were already updated in-place by dcp.load()
         states.update(original_stateful_states)
+
+        # for debugging purposes
+        if dist.get_rank() == 0:
+            for k, v in self.states["model"].state_dict().items():
+                logger.info(f"{k}: {v}")
+
         return True
 
     def _purge_stale_checkpoints(self):
