@@ -420,11 +420,6 @@ class CheckpointManager:
         # whose states were already updated in-place by dcp.load()
         states.update(original_stateful_states)
 
-        # for debugging purposes
-        if dist.get_rank() == 0:
-            for k, v in self.states["model"].state_dict().items():
-                logger.info(f"{k}: {v}")
-
         return True
 
     def _purge_stale_checkpoints(self):
