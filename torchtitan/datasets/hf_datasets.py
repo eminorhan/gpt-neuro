@@ -14,7 +14,7 @@ from torch.utils.data import IterableDataset
 from torchdata.stateful_dataloader import StatefulDataLoader
 from torchtitan.logging import logger
 
-from datasets import Dataset, load_dataset, load_from_disk, interleave_datasets
+from datasets import Dataset, load_dataset
 from datasets.distributed import split_dataset_by_node
 
 # map from dataset name to a local directory, or a dataset repository on the HF hub

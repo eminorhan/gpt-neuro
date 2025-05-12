@@ -16,6 +16,9 @@ from typing import Optional
 import torch
 import torch.distributed.checkpoint as dcp
 import torch.nn as nn
+import numpy as np
+from datasets import load_dataset
+
 from torch.distributed import DeviceMesh
 from torch.distributed.elastic.multiprocessing.errors import record
 from torch.distributed.tensor import Replicate
@@ -27,10 +30,9 @@ from torch.distributed.tensor.parallel import (
 from torchtitan.metrics import build_gpu_memory_monitor
 from torchtitan.logging import init_logger, logger
 from torchtitan.models import model_name_to_cls, models_config
-from torchtitan import utils as dist_utils
-
 from torchtitan.config_manager import JobConfig
 from torchtitan.parallelisms import ParallelDims
+from torchtitan import utils as dist_utils
 
 # support running w/o installing as package
 wd = Path(__file__).parent.parent.resolve()
@@ -71,13 +73,14 @@ def apply_tp_minus_sp(model: nn.Module, tp_mesh: DeviceMesh):
 def test_generate(
     config_path: str,
     checkpoint_path: str,
-    prompt: str,
+    data_idx: int,
+    ctx_t: int,
+    gen_t: int,
     *,
     temperature: float = 1.0,
-    max_new_tokens: int = 32,
     batch_size: int = 1,
     top_k: Optional[int] = None,
-    seed: Optional[int] = None
+    seed: Optional[int] = None,
 ):
     init_logger()
 
@@ -85,9 +88,6 @@ def test_generate(
     config = JobConfig()
     config.parse_args([f"--job.config_file={config_path}"])
     config._validate_config()
-
-    if len(args.prompt) == 0:
-        logger.warning("The input prompt is empty, model will respond from a empty sequence.")
 
     world_size = int(os.environ.get("WORLD_SIZE", 1))
     local_rank = int(os.environ.get("LOCAL_RANK", 0))
@@ -141,15 +141,37 @@ def test_generate(
 
     # load ckpt
     begin = time.monotonic()
-    logger.info(f"Loading chkpt at: {checkpoint_path}")
+    logger.info(f"Loading ckpt at: {checkpoint_path}")
     dcp.load(state_dict, checkpoint_id=checkpoint_path)
-    logger.info(f"Finished loading chkpt in {time.monotonic() - begin:.2f} seconds.")
+    logger.info(f"Finished loading ckpt in {time.monotonic() - begin:.2f} seconds.")
 
     gpu_mem_stats = gpu_memory_monitor.get_peak_stats()
     logger.info(f"GPU memory usage for model: {gpu_mem_stats.max_reserved_gib:.2f}GiB ({gpu_mem_stats.max_reserved_pct:.2f}%)")
 
-    # set up prompt and repeat batch_size times
-    input_ids = torch.tensor(255, dtype=torch.long).view(1, -1).repeat(batch_size, 1).to("cuda")
+    # set up input
+    ds = load_dataset("eminorhan/neural-bench-rodent", split="test")
+    logger.info(f"Test dataset loaded (size: {len(ds)})")
+
+    data_row = ds[data_idx]
+    source_dataset = data_row["source_dataset"]
+    sample = np.array(data_row["spike_counts"])
+    logger.info(f"Sample loaded (shape: {sample.shape})")
+    logger.info(f"Sample source dataset: {source_dataset})")
+
+    n_neurons = sample.shape[0]
+    bos_token = model_config.vocab_size - 1
+    max_new_tokens = n_neurons * gen_t  # total number of tokens to be generated
+
+    # append bos token
+    sample = np.concatenate((np.full((1, sample.shape[1]), bos_token), sample), axis=0)
+
+    prompt = sample[:, :ctx_t]  # prompt
+    prompt = prompt.T.flatten().tolist()
+
+    gt = sample[:, :(ctx_t+gen_t)]  # ground truth
+    gt = gt.T.flatten().tolist()
+
+    input_ids = torch.tensor(prompt, dtype=torch.long).view(1, -1).repeat(batch_size, 1).to("cuda")
 
     gpu_memory_monitor.reset_peak_stats()
 
@@ -158,6 +180,8 @@ def test_generate(
     responses = generate(
         model,
         input_ids,
+        n_neurons,
+        bos_token,
         temperature=temperature,
         max_new_tokens=max_new_tokens,
         top_k=top_k,
@@ -191,6 +215,7 @@ def test_generate(
             output_data["responses"].append(_data)
 
             logger.info(f"\n{inp_tok} - {out_tok}\n")
+            np.savez(f"rodent_test_sample_{data_idx}_{ctx_t}_{gen_t}.npz", prompt=inp_tok, gen=out_tok, gt=gt)
 
         gpu_mem_stats = gpu_memory_monitor.get_peak_stats()
         output_data["metadata"] = {
@@ -219,22 +244,26 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Test generation")
     parser.add_argument("--config", type=str, required=True, help="TOML config file path (required)")
     parser.add_argument("--ckpt", type=str, required=True, help="DCP checkpoint path to load (required)")
-    parser.add_argument("--temperature", type=float, default=1.0, help="Sampling temperature. Default is 1.0")
-    parser.add_argument("--max_new_tokens", type=int, default=32, help="Max number of tokens to generate. Default is 32")
+    parser.add_argument("--temperature", type=float, default=0.9, help="Sampling temperature. Default is 0.9")
     parser.add_argument("--batch_size", type=int, default=1, help="Number of samples to run in batch")
     parser.add_argument("--top_k", type=int, help="Prune to select from top_k probabilities. Optional")
     parser.add_argument("--seed", type=int, help="Random seed for reproducibility")
-    parser.add_argument("--prompt", type=str, default="", help="Input prompt")
+    parser.add_argument("--data_idx", type=int, default=11, help="Idx of data prompt")
+    parser.add_argument("--ctx_t", type=int, default=2, help="Duration of prompt context (time bins)")
+    parser.add_argument("--gen_t", type=int, default=2, help="Duration of generated sample (time bins)")
+
     parser.add_argument("--out", action="store_true", default=False, help="If specified, prints the report to stdout. Defaults to no output.")
 
     args = parser.parse_args()
+    print(args)
 
     test_generate(
         config_path=args.config,
         checkpoint_path=args.ckpt,
-        prompt=args.prompt,
+        data_idx=args.data_idx,
+        ctx_t = args.ctx_t,
+        gen_t = args.gen_t,
         temperature=args.temperature,
-        max_new_tokens=args.max_new_tokens,
         batch_size=args.batch_size,
         top_k=args.top_k,
         seed=args.seed

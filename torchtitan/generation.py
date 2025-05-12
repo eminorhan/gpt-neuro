@@ -51,6 +51,8 @@ def generate_next_token(
 def generate(
     model,
     input_ids: torch.Tensor,
+    n_neurons: int,
+    bos_token: int,
     *,
     max_new_tokens: int,
     temperature: float = 1.0,
@@ -67,14 +69,18 @@ def generate(
 
     generated_tokens = input_ids.clone()
 
-    for _ in range(max_new_tokens):
-        next_token = generate_next_token(
-            model,
-            x=generated_tokens,
-            temperature=temperature,
-            top_k=top_k,
-            rng=rng,
-        )
+    for i in range(max_new_tokens):
+
+        if i % n_neurons == 0:
+            next_token = torch.tensor(bos_token, dtype=torch.long, device=generated_tokens.device).unsqueeze(0).unsqueeze(0)
+        else:
+            next_token = generate_next_token(
+                model,
+                x=generated_tokens,
+                temperature=temperature,
+                top_k=top_k,
+                rng=rng,
+            )
 
         generated_tokens = torch.cat([generated_tokens, next_token], dim=1)
 

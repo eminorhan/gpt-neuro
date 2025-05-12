@@ -5,7 +5,7 @@
 #SBATCH --nodes=1
 #SBATCH --gpus-per-node=8
 #SBATCH --cpus-per-task=8
-#SBATCH --time=0:10:00
+#SBATCH --time=0:30:00
 #SBATCH --job-name=generate_rodent_8B_131k
 #SBATCH --output=generate_rodent_8B_131k_%A_%a.out
 #SBATCH --array=0
