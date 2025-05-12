@@ -119,7 +119,7 @@ def test_generate(
         parallel_dims = ParallelDims(
             dp_replicate=1,
             dp_shard=-1,
-            tp=world_size,
+            tp=8,
             pp=1,
             world_size=world_size,
             enable_loss_parallel=False,
@@ -149,7 +149,7 @@ def test_generate(
     logger.info(f"GPU memory usage for model: {gpu_mem_stats.max_reserved_gib:.2f}GiB ({gpu_mem_stats.max_reserved_pct:.2f}%)")
 
     # set up input
-    ds = load_dataset("eminorhan/neural-bench-rodent", split="test")
+    ds = load_dataset("eminorhan/neural-bench-primate", split="test")
     logger.info(f"Test dataset loaded (size: {len(ds)})")
 
     data_row = ds[data_idx]
@@ -160,7 +160,7 @@ def test_generate(
 
     n_neurons = sample.shape[0]
     bos_token = model_config.vocab_size - 1
-    max_new_tokens = n_neurons * gen_t  # total number of tokens to be generated
+    max_new_tokens = (n_neurons + 1) * gen_t  # total number of tokens to be generated (+1 for bos)
 
     # append bos token
     sample = np.concatenate((np.full((1, sample.shape[1]), bos_token), sample), axis=0)
@@ -244,14 +244,13 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Test generation")
     parser.add_argument("--config", type=str, required=True, help="TOML config file path (required)")
     parser.add_argument("--ckpt", type=str, required=True, help="DCP checkpoint path to load (required)")
-    parser.add_argument("--temperature", type=float, default=0.9, help="Sampling temperature. Default is 0.9")
+    parser.add_argument("--temperature", type=float, default=1.0, help="Sampling temperature. Default is 1.0")
     parser.add_argument("--batch_size", type=int, default=1, help="Number of samples to run in batch")
     parser.add_argument("--top_k", type=int, help="Prune to select from top_k probabilities. Optional")
     parser.add_argument("--seed", type=int, help="Random seed for reproducibility")
-    parser.add_argument("--data_idx", type=int, default=11, help="Idx of data prompt")
-    parser.add_argument("--ctx_t", type=int, default=2, help="Duration of prompt context (time bins)")
-    parser.add_argument("--gen_t", type=int, default=2, help="Duration of generated sample (time bins)")
-
+    parser.add_argument("--data_idx", type=int, default=6, help="Idx of data prompt")
+    parser.add_argument("--ctx_t", type=int, default=80, help="Duration of prompt context (time bins)")
+    parser.add_argument("--gen_t", type=int, default=80, help="Duration of generated sample (time bins)")
     parser.add_argument("--out", action="store_true", default=False, help="If specified, prints the report to stdout. Defaults to no output.")
 
     args = parser.parse_args()

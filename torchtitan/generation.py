@@ -42,6 +42,7 @@ def generate_next_token(
     rng: Optional[torch.Generator] = None,
 ) -> torch.Tensor:
     logits = model(x)  # (B, T, vocab_size)
+    logits[:, :, -1] = float('-inf')  # do not emit bos token
     probs = logits_to_probs(logits[:, -1, :], temperature, top_k)
     next_token = multinomial_sample_one(probs, rng=rng)
     return next_token
@@ -71,7 +72,7 @@ def generate(
 
     for i in range(max_new_tokens):
 
-        if i % n_neurons == 0:
+        if i % (n_neurons+1) == 0:
             next_token = torch.tensor(bos_token, dtype=torch.long, device=generated_tokens.device).unsqueeze(0).unsqueeze(0)
         else:
             next_token = generate_next_token(
