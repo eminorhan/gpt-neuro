@@ -5,7 +5,7 @@
 #SBATCH --nodes=64
 #SBATCH --gpus-per-node=8
 #SBATCH --cpus-per-task=8
-#SBATCH --time=2:00:00
+#SBATCH --time=01:25:00
 #SBATCH --job-name=train_lang_primate_8B_131k
 #SBATCH --output=train_lang_primate_8B_131k_%A_%a.out
 #SBATCH --array=0
@@ -40,7 +40,7 @@ export GPUS_PER_NODE=8
 export MASTER_ADDR=$(scontrol show hostnames $SLURM_JOB_NODELIST | head -n 1)
 export MASTER_PORT=3442
 
-CONFIG_FILE=${CONFIG_FILE:-"./train_configs/lang_primate_8b_131k.toml"}
+CONFIG_FILE=${CONFIG_FILE:-"./train_configs/lang_primate_8b_131k_short.toml"}
 
 srun torchrun --nnodes $SLURM_NNODES --nproc_per_node 8 --max_restarts 9 --node_rank $SLURM_NODEID --rdzv_id 101 --rdzv_backend c10d --rdzv_endpoint "$MASTER_ADDR:$MASTER_PORT" ./train.py --job.config_file ${CONFIG_FILE}
 

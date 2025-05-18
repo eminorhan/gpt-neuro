@@ -149,7 +149,7 @@ def test_generate(
     logger.info(f"GPU memory usage for model: {gpu_mem_stats.max_reserved_gib:.2f}GiB ({gpu_mem_stats.max_reserved_pct:.2f}%)")
 
     # set up input
-    ds = load_dataset("eminorhan/neural-bench-primate", split="test")
+    ds = load_dataset("eminorhan/neural-bench-primate", split="train")
     logger.info(f"Test dataset loaded (size: {len(ds)})")
 
     data_row = ds[data_idx]
@@ -248,9 +248,9 @@ if __name__ == "__main__":
     parser.add_argument("--batch_size", type=int, default=1, help="Number of samples to run in batch")
     parser.add_argument("--top_k", type=int, help="Prune to select from top_k probabilities. Optional")
     parser.add_argument("--seed", type=int, help="Random seed for reproducibility")
-    parser.add_argument("--data_idx", type=int, default=6, help="Idx of data prompt")
-    parser.add_argument("--ctx_t", type=int, default=80, help="Duration of prompt context (time bins)")
-    parser.add_argument("--gen_t", type=int, default=80, help="Duration of generated sample (time bins)")
+    parser.add_argument("--data_idx", type=int, default=2, help="Idx of data prompt")
+    parser.add_argument("--ctx_t", type=int, default=10, help="Duration of prompt context (time bins)")
+    parser.add_argument("--gen_t", type=int, default=10, help="Duration of generated sample (time bins)")
     parser.add_argument("--out", action="store_true", default=False, help="If specified, prints the report to stdout. Defaults to no output.")
 
     args = parser.parse_args()
