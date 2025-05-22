@@ -1,4 +1,8 @@
-### GPT-neuro: yet another foundation model for neural data
+### Large-scale distributed training of autoregressive generative models on *the Neural Pile*
+
+This repository contains the code for training large-scale autoregressive generative models on *the Neural Pile*. The models are all trained on 64 nodes on the Frontier supercomputer with the following configuration of parallelisms: HSDP (32) + TP (8) + DP (2). The global batch size is 34M tokens per update.
+
+The following models are trained with this repository:
 
 `rodent-8B-131k`: pretrained on rodent data
 
@@ -6,7 +10,7 @@
 
 `rodent-primate-8B-131k`: pretrained on rodent data -> finetuned on primate data
 
-`text-primate-8B-131k`: pretrained on language -> finetuned on primate data
+`lang-primate-8B-131k`: pretrained on language -> finetuned on primate data
 
 ---
 
