@@ -1,4 +1,4 @@
-### Large-scale distributed training of autoregressive generative models on *the Neural Pile*
+## Large-scale distributed training of autoregressive generative models on *the Neural Pile*
 
 This repository contains the code and instructions for training large-scale autoregressive generative models on *the Neural Pile*. 
 
