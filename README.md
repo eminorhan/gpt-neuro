@@ -28,6 +28,14 @@ Here, `gfx90a` is the correct GPU architecture choice for MI250X. In the last st
 
 * Install the `aws-ofi-rccl` plugin, which enables `rccl` (AMD ROCm's version of `nccl`) to use `libfabric` for a more performant interconnect. I provide a shell script here ([`aws_ofi_rccl.sh`](aws_ofi_rccl.sh)) to install this plugin. Simply run this script (*e.g.* `sh aws_ofi_rccl.sh`) to install the plugin (the script assumes that your ROCm version is 6.3.1 and the `libfabric` version is 1.22.0; if you're using different versions, change it accordingly).
 
+### Training data
+
+*The Neural Pile* is hosted on two public Hugging Face dataset repositories:
+* [`eminorhan/neural-pile-primate`](https://huggingface.co/datasets/eminorhan/neural-pile-primate) hosts the primate data.
+* [`eminorhan/neural-pile-rodent`](https://huggingface.co/datasets/eminorhan/neural-pile-rodent) hosts the rodent data.
+
+You can download the data, *e.g.* using the `load_dataset` function in the Hugging Face `datasets` repository. You will need about 34 GB of free disk space in order to cache the primate data on disk and about 477 GB for the rodent data. The training code in this repository assumes that the dataset is already cached on local disk.
+
 ### Training
 
 The following models can be trained with this repository:
