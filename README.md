@@ -50,6 +50,10 @@ The following models can be trained with this repository:
 
 The training configurations for these models can be found in the [`train_configs`](train_configs) folder.
 
+### Sampling
+
+You can use the [`generate.py`](generate.py) script to generate conditional samples from a pretrained model. Note that this script uses the `dcp` checkpoint of the model. The SLURM batch script in [`generate_rodent_8B_131k.sh`](generate_rodent_8B_131k.sh) provides a usage example. 
+
 ### Checkpoint conversions
 
 To generate an initial distributed checkpoint (`dcp`) from the pretrained `llama-3.1-8B` model without copying the input and output layers (to take into account the different vocab size in our models):

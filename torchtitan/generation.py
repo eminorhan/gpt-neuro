@@ -84,5 +84,7 @@ def generate(
             )
 
         generated_tokens = torch.cat([generated_tokens, next_token], dim=1)
+        if i % 1000 == 0:
+            print(i, max_new_tokens)
 
     return generated_tokens

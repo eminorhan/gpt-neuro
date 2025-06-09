@@ -73,6 +73,8 @@ def apply_tp_minus_sp(model: nn.Module, tp_mesh: DeviceMesh):
 def test_generate(
     config_path: str,
     checkpoint_path: str,
+    ds_name: str,
+    ds_split: str,
     data_idx: int,
     ctx_t: int,
     gen_t: int,
@@ -149,8 +151,8 @@ def test_generate(
     logger.info(f"GPU memory usage for model: {gpu_mem_stats.max_reserved_gib:.2f}GiB ({gpu_mem_stats.max_reserved_pct:.2f}%)")
 
     # set up input
-    ds = load_dataset("eminorhan/neural-bench-primate", split="train")
-    logger.info(f"Test dataset loaded (size: {len(ds)})")
+    ds = load_dataset(ds_name, split=ds_split)
+    logger.info(f"Dataset loaded (size: {len(ds)})")
 
     data_row = ds[data_idx]
     source_dataset = data_row["source_dataset"]
@@ -215,7 +217,7 @@ def test_generate(
             output_data["responses"].append(_data)
 
             logger.info(f"\n{inp_tok} - {out_tok}\n")
-            np.savez(f"rodent_test_sample_{data_idx}_{ctx_t}_{gen_t}.npz", prompt=inp_tok, gen=out_tok, gt=gt)
+            np.savez(f"rodent_sample_{data_idx}_{ctx_t}_{gen_t}.npz", prompt=inp_tok, gen=out_tok, gt=gt)
 
         gpu_mem_stats = gpu_memory_monitor.get_peak_stats()
         output_data["metadata"] = {
@@ -244,13 +246,15 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Test generation")
     parser.add_argument("--config", type=str, required=True, help="TOML config file path (required)")
     parser.add_argument("--ckpt", type=str, required=True, help="DCP checkpoint path to load (required)")
+    parser.add_argument("--ds_name", type=str, default="eminorhan/neural-bench-rodent", help="HF repo name of the dataset to be loaded")
+    parser.add_argument("--ds_split", type=str, default="train", help="Dataset split to be loaded")
     parser.add_argument("--temperature", type=float, default=1.0, help="Sampling temperature. Default is 1.0")
     parser.add_argument("--batch_size", type=int, default=1, help="Number of samples to run in batch")
     parser.add_argument("--top_k", type=int, help="Prune to select from top_k probabilities. Optional")
     parser.add_argument("--seed", type=int, help="Random seed for reproducibility")
-    parser.add_argument("--data_idx", type=int, default=2, help="Idx of data prompt")
-    parser.add_argument("--ctx_t", type=int, default=10, help="Duration of prompt context (time bins)")
-    parser.add_argument("--gen_t", type=int, default=10, help="Duration of generated sample (time bins)")
+    parser.add_argument("--data_idx", type=int, default=22, help="Idx of data prompt")
+    parser.add_argument("--ctx_t", type=int, default=4, help="Duration of prompt context (time bins)")
+    parser.add_argument("--gen_t", type=int, default=4, help="Duration of generated sample (time bins)")
     parser.add_argument("--out", action="store_true", default=False, help="If specified, prints the report to stdout. Defaults to no output.")
 
     args = parser.parse_args()
@@ -259,6 +263,8 @@ if __name__ == "__main__":
     test_generate(
         config_path=args.config,
         checkpoint_path=args.ckpt,
+        ds_name=args.ds_name,
+        ds_split=args.ds_split,
         data_idx=args.data_idx,
         ctx_t = args.ctx_t,
         gen_t = args.gen_t,
