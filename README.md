@@ -40,15 +40,29 @@ You can download the data, *e.g.* using the `load_dataset` function in the Huggi
 
 The following models can be trained with this repository:
 
-`rodent-8B-131k`: pretrained on rodent data ([training script](train_rodent_8B_131k.sh))
+`rodent-8B-131k`: pretrained on rodent data ([SLURM batch script for training](train_rodent_8B_131k.sh))
 
-`primate-8B-131k`: pretrained on primate data ([training script](train_primate_8B_131k.sh))
+`primate-8B-131k`: pretrained on primate data ([SLURM batch script for training](train_primate_8B_131k.sh))
 
-`rodent-primate-8B-131k`: pretrained on rodent data -> finetuned on primate data ([training script](train_rodent_primate_8B_131k.sh))
+`rodent-primate-8B-131k`: pretrained on rodent data -> finetuned on primate data ([SLURM batch script for training](train_rodent_primate_8B_131k.sh))
 
-`lang-primate-8B-131k`: pretrained on language -> finetuned on primate data ([training script](train_lang_primate_8B_131k.sh))
+`lang-primate-8B-131k`: pretrained on language -> finetuned on primate data ([SLURM batch script for training](train_lang_primate_8B_131k.sh))
 
 The training configurations for these models can be found in the [`train_configs`](train_configs) folder.
+
+### Evaluation
+
+You can use the [`evaluate.py`](evalue.py) script to evaluate the pretrained models on test data. Note that this script uses the `dcp` checkpoint of the model for evaluation. The same four pretrained models above can be evaluated with this script:
+
+`rodent-8B-131k`: [SLURM batch script for evaluation](evaluate_rodent_8B_131k.sh)
+
+`primate-8B-131k`: [SLURM batch script for evaluation](evaluate_primate_8B_131k.sh)
+
+`rodent-primate-8B-131k`: [SLURM batch script for evaluation](evaluate_rodent_primate_8B_131k.sh)
+
+`lang-primate-8B-131k`: [SLURM batch script for evaluation](evaluate_lang_primate_8B_131k.sh)
+
+The evaluation configurations for these models can be found in the [`eval_configs`](eval_configs) folder.
 
 ### Sampling
 

@@ -259,7 +259,7 @@ class CheckpointManager:
     def _save_last_step(self, curr_step: int) -> None:
         # We only consider saving weights only at the end of the training. So
         # this won't affect preemption and training resume. We also only allow
-        # dtype conversion when we are checkpoint model weights only and the
+        # dtype conversion when we are checkpointing model weights only and the
         # current dtype is not the same as the export dtype at the end of the training.
         if self.model_weights_only:
             # We update self.states to keep the model only.
