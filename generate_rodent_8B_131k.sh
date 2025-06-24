@@ -5,7 +5,7 @@
 #SBATCH --nodes=1
 #SBATCH --gpus-per-node=8
 #SBATCH --cpus-per-task=8
-#SBATCH --time=0:20:00
+#SBATCH --time=0:45:00
 #SBATCH --job-name=generate_rodent_8B_131k
 #SBATCH --output=generate_rodent_8B_131k_%A_%a.out
 #SBATCH --array=0
@@ -42,6 +42,6 @@ export MASTER_PORT=3442
 
 CONFIG_FILE=${CONFIG_FILE:-"./train_configs/rodent_8b_131k.toml"}
 
-srun torchrun --nnodes $SLURM_NNODES --nproc_per_node 8 --node_rank $SLURM_NODEID --rdzv_id 101 --rdzv_backend c10d --rdzv_endpoint "$MASTER_ADDR:$MASTER_PORT" ./generate.py --config ${CONFIG_FILE} --ckpt "outputs/rodent_8B_131k/checkpoint/step-8280" --ds_name "eminorhan/neural-bench-primate" --ds_split "train"
+srun torchrun --nnodes $SLURM_NNODES --nproc_per_node 8 --node_rank $SLURM_NODEID --rdzv_id 101 --rdzv_backend c10d --rdzv_endpoint "$MASTER_ADDR:$MASTER_PORT" ./generate.py --config ${CONFIG_FILE} --ckpt "outputs/rodent_8B_131k/checkpoint/step-10800" --ds_name "eminorhan/neural-bench-rodent" --ds_split "train"
 
 echo "Done"

@@ -4,9 +4,9 @@
 # This source code is licensed under the BSD-style license found in the
 # LICENSE file in the root directory of this source tree.
 
-from typing import Optional
-
 import torch
+import logging
+from typing import Optional
 
 
 def multinomial_sample_one(
@@ -54,6 +54,7 @@ def generate(
     input_ids: torch.Tensor,
     n_neurons: int,
     bos_token: int,
+    logger: logging.Logger,
     *,
     max_new_tokens: int,
     temperature: float = 1.0,
@@ -85,6 +86,6 @@ def generate(
 
         generated_tokens = torch.cat([generated_tokens, next_token], dim=1)
         if i % 1000 == 0:
-            print(i, max_new_tokens)
+            logger.info(f"Step {i} of {max_new_tokens}")
 
     return generated_tokens

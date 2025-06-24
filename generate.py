@@ -158,7 +158,7 @@ def test_generate(
     source_dataset = data_row["source_dataset"]
     sample = np.array(data_row["spike_counts"])
     logger.info(f"Sample loaded (shape: {sample.shape})")
-    logger.info(f"Sample source dataset: {source_dataset})")
+    logger.info(f"Sample source dataset: {source_dataset}")
 
     n_neurons = sample.shape[0]
     bos_token = model_config.vocab_size - 1
@@ -184,6 +184,7 @@ def test_generate(
         input_ids,
         n_neurons,
         bos_token,
+        logger,
         temperature=temperature,
         max_new_tokens=max_new_tokens,
         top_k=top_k,
@@ -217,7 +218,7 @@ def test_generate(
             output_data["responses"].append(_data)
 
             logger.info(f"\n{inp_tok} - {out_tok}\n")
-            np.savez(f"rodent_sample_{data_idx}_{ctx_t}_{gen_t}.npz", prompt=inp_tok, gen=out_tok, gt=gt)
+            np.savez(f"{ds_name.split('/')[-1]}-{ds_split}-sample-{data_idx}-{ctx_t}-{gen_t}.npz", prompt=inp_tok, gen=out_tok, gt=gt)
 
         gpu_mem_stats = gpu_memory_monitor.get_peak_stats()
         output_data["metadata"] = {
@@ -252,9 +253,9 @@ if __name__ == "__main__":
     parser.add_argument("--batch_size", type=int, default=1, help="Number of samples to run in batch")
     parser.add_argument("--top_k", type=int, help="Prune to select from top_k probabilities. Optional")
     parser.add_argument("--seed", type=int, help="Random seed for reproducibility")
-    parser.add_argument("--data_idx", type=int, default=2, help="Idx of data prompt")
-    parser.add_argument("--ctx_t", type=int, default=20, help="Duration of prompt context (time bins)")
-    parser.add_argument("--gen_t", type=int, default=20, help="Duration of generated sample (time bins)")
+    parser.add_argument("--data_idx", type=int, default=6, help="Idx of data prompt")
+    parser.add_argument("--ctx_t", type=int, default=450, help="Duration of prompt context (time bins)")
+    parser.add_argument("--gen_t", type=int, default=450, help="Duration of generated sample (time bins)")
     parser.add_argument("--out", action="store_true", default=False, help="If specified, prints the report to stdout. Defaults to no output.")
 
     args = parser.parse_args()
