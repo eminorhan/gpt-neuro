@@ -218,7 +218,7 @@ def test_generate(
             output_data["responses"].append(_data)
 
             logger.info(f"\n{inp_tok} - {out_tok}\n")
-            np.savez(f"{ds_name.split('/')[-1]}-{ds_split}-sample-{data_idx}-{ctx_t}-{gen_t}.npz", prompt=inp_tok, gen=out_tok, gt=gt)
+            np.savez(f"{ds_name.split('/')[-1]}-{ds_split}-sample-{data_idx}-{ctx_t}-{gen_t}.npz", prompt=inp_tok, gen=out_tok, gt=gt, n_neurons=n_neurons)
 
         gpu_mem_stats = gpu_memory_monitor.get_peak_stats()
         output_data["metadata"] = {
