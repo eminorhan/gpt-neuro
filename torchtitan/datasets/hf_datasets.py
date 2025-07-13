@@ -124,7 +124,7 @@ class HuggingFaceDataset(IterableDataset, Stateful):
     #     return iter(self._data)
 
     def load_state_dict(self, state_dict):
-        self._sample_idx = 0  # state_dict["sample_idx"]
+        self._sample_idx = state_dict["sample_idx"]
         self._all_tokens = state_dict["token_buffer"]
 
     def state_dict(self):
