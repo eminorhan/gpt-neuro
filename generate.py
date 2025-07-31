@@ -156,7 +156,9 @@ def test_generate(
 
     data_row = ds[data_idx]
     source_dataset = data_row["source_dataset"]
-    sample = np.array(data_row["spike_counts"])
+
+    sample = np.zeros((100, 1), dtype=np.uint8)
+    #sample = np.array(data_row["spike_counts"])
     logger.info(f"Sample loaded (shape: {sample.shape})")
     logger.info(f"Sample source dataset: {source_dataset}")
 
@@ -167,7 +169,7 @@ def test_generate(
     # append bos token
     sample = np.concatenate((np.full((1, sample.shape[1]), bos_token), sample), axis=0)
 
-    prompt = np.zeros((10, 1), dtype=np.uint8)  # sample[:, :ctx_t]  # prompt
+    prompt = sample[:, :ctx_t]  # prompt
     prompt = prompt.T.flatten().tolist()
 
     gt = sample[:, :(ctx_t+gen_t)]  # ground truth
@@ -255,7 +257,7 @@ if __name__ == "__main__":
     parser.add_argument("--seed", type=int, help="Random seed for reproducibility")
     parser.add_argument("--data_idx", type=int, default=100, help="Idx of data prompt")
     parser.add_argument("--ctx_t", type=int, default=1, help="Duration of prompt context (time bins)")
-    parser.add_argument("--gen_t", type=int, default=20, help="Duration of generated sample (time bins)")
+    parser.add_argument("--gen_t", type=int, default=29, help="Duration of generated sample (time bins)")
     parser.add_argument("--out", action="store_true", default=False, help="If specified, prints the report to stdout. Defaults to no output.")
 
     args = parser.parse_args()
