@@ -80,4 +80,10 @@ To re-consolidate the `dcp` checkpoint into a single `.pth` checkpoint file and 
 python dcp_to_llama.py --input_dir INPUT_DIR --output_dir OUTPUT_DIR --hf_repo_name HF_REPO_NAME --push_to_hub
 ```
 
+### Training and evaluating `n-gram` models on *the Neural Pile*
 
+We also provide a simple Python script, [`ngram.py`](ngram.py), to train and evaluate n-gram models as a baseline on *the Neural Pile*. You can use it as follows:
+```bash
+python ngram.py --hf_repo_name HF_REPO_NAME --n N
+```
+where `hf_repo_name` is the HF repository name for the dataset and `n` is the `n` of the n-gram. `hf_repo_name` can only be one of `"eminorhan/neural-pile-primate"` (primate subset of the data) or `"eminorhan/neural-pile-rodent"` (rodent subset of the data).  Please note that it can take several days to train an n-gram on the larger rodent subset of *the Neural Pile*.

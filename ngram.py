@@ -1,4 +1,4 @@
-import os
+import argparse
 import math
 import numpy as np
 
@@ -142,24 +142,30 @@ class NGramModel:
         return cross_entropy_loss
 
 
+def get_args_parser():
+    parser = argparse.ArgumentParser('Train and evaluate an n-gram model on the Neural Pile', add_help=False)
+    parser.add_argument('--hf_repo_name', default="eminorhan/neural-bench-rodent", type=str, choices=["eminorhan/neural-bench-primate", "eminorhan/neural-bench-rodent"], help='hf repo name')
+    parser.add_argument('--n', default=1, type=int, help='n of n-gram')
+    return parser
+
+
 if __name__ == '__main__':
 
-    # dataset info
-    DATASET_PATH = "eminorhan/neural-bench-primate" 
-    SEQUENCE_KEY = "spike_counts" # column name in the dataset that contains the data.
+    args = get_args_parser()
+    args = args.parse_args()
 
-    # n-gram info
-    N_VALUE = 1
+    # constants
+    SEQUENCE_KEY = "spike_counts" # column name in the dataset that contains the data.
     VOCAB_SIZE = 256
     
     # load the dataset
-    print(f"Loading dataset '{DATASET_PATH}'...")
-    ds_train = load_dataset(DATASET_PATH, split="train")
-    ds_test = load_dataset(DATASET_PATH, split="test")
+    print(f"Loading dataset '{args.hf_repo_name}'...")
+    ds_train = load_dataset(args.hf_repo_name, split="train")
+    ds_test = load_dataset(args.hf_repo_name, split="test")
     print("Dataset loaded.")
 
     # initialize the n-gram model
-    ngram_model = NGramModel(n=N_VALUE, vocab_size=VOCAB_SIZE)
+    ngram_model = NGramModel(n=args.n, vocab_size=VOCAB_SIZE)
     
     # train the model (NOTE: for large datasets, you might want to take a small subset for faster prototyping/debugging: e.g., ds_train.take(100))
     ngram_model.train(ds_train, sequence_key=SEQUENCE_KEY)
@@ -168,6 +174,6 @@ if __name__ == '__main__':
     loss = ngram_model.estimate_cross_entropy(ds_test, sequence_key=SEQUENCE_KEY)
     
     print("\n--- Results ---")
-    print(f"Model: {N_VALUE}-gram")
+    print(f"Model: {args.n}-gram")
     print(f"Test Cross-Entropy Loss: {loss:.4f} nats per token")
     print("----------------")
