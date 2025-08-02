@@ -151,18 +151,19 @@ def test_generate(
     logger.info(f"GPU memory usage for model: {gpu_mem_stats.max_reserved_gib:.2f}GiB ({gpu_mem_stats.max_reserved_pct:.2f}%)")
 
     # set up input
-    ds = load_dataset(ds_name, split=ds_split)
-    logger.info(f"Dataset loaded (size: {len(ds)})")
-
-    data_row = ds[data_idx]
-    source_dataset = data_row["source_dataset"]
-
-    sample = np.zeros((100, 1), dtype=np.uint8)
-    #sample = np.array(data_row["spike_counts"])
-    logger.info(f"Sample loaded (shape: {sample.shape})")
-    logger.info(f"Sample source dataset: {source_dataset}")
-
-    n_neurons = sample.shape[0]
+    if args.unconditional:
+        n_neurons = args.n_neurons
+        sample = np.zeros((n_neurons, 1), dtype=np.uint8)
+    else:
+        ds = load_dataset(ds_name, split=ds_split)
+        logger.info(f"Dataset loaded (size: {len(ds)})")
+        data_row = ds[data_idx]
+        source_dataset = data_row["source_dataset"]
+        sample = np.array(data_row["spike_counts"])
+        logger.info(f"Sample loaded (shape: {sample.shape})")
+        logger.info(f"Sample source dataset: {source_dataset}")
+        n_neurons = sample.shape[0]
+    
     bos_token = model_config.vocab_size - 1
     max_new_tokens = (n_neurons + 1) * gen_t  # total number of tokens to be generated (+1 for bos)
 
@@ -220,7 +221,10 @@ def test_generate(
             output_data["responses"].append(_data)
 
             logger.info(f"\n{inp_tok} - {out_tok}\n")
-            np.savez(f"{ds_name.split('/')[-1]}-{ds_split}-sample-{data_idx}-{ctx_t}-{gen_t}.npz", prompt=inp_tok, gen=out_tok, gt=gt, n_neurons=n_neurons)
+            if args.unconditional:
+                np.savez(f"unconditional-sample-{n_neurons}-{ctx_t}-{gen_t}.npz", prompt=inp_tok, gen=out_tok, gt=gt, n_neurons=n_neurons)
+            else:
+                np.savez(f"{ds_name.split('/')[-1]}-{ds_split}-sample-{data_idx}-{ctx_t}-{gen_t}.npz", prompt=inp_tok, gen=out_tok, gt=gt, n_neurons=n_neurons)
 
         gpu_mem_stats = gpu_memory_monitor.get_peak_stats()
         output_data["metadata"] = {
@@ -249,17 +253,22 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Test generation")
     parser.add_argument("--config", type=str, required=True, help="TOML config file path (required)")
     parser.add_argument("--ckpt", type=str, required=True, help="DCP checkpoint path to load (required)")
-    parser.add_argument("--ds_name", type=str, default="eminorhan/neural-bench-rodent", help="HF repo name of the dataset to be loaded")
-    parser.add_argument("--ds_split", type=str, default="train", help="Dataset split to be loaded")
     parser.add_argument("--temperature", type=float, default=1.0, help="Sampling temperature. Default is 1.0")
     parser.add_argument("--batch_size", type=int, default=1, help="Number of samples to run in batch")
     parser.add_argument("--top_k", type=int, help="Prune to select from top_k probabilities. Optional")
     parser.add_argument("--seed", type=int, help="Random seed for reproducibility")
+    parser.add_argument("--out", action="store_true", default=False, help="If specified, prints the report to stdout. Defaults to no output.")
+    # conditional
+    parser.add_argument("--ds_name", type=str, default="eminorhan/neural-bench-rodent", help="HF repo name of the dataset to be loaded")
+    parser.add_argument("--ds_split", type=str, default="train", help="Dataset split to be loaded")
     parser.add_argument("--data_idx", type=int, default=100, help="Idx of data prompt")
     parser.add_argument("--ctx_t", type=int, default=1, help="Duration of prompt context (time bins)")
+    # unconditional
+    parser.add_argument("--unconditional", action="store_true", default=False, help="If set, samples will be generated unconditionally (default: conditional generation).")
+    parser.add_argument("--n_neurons", type=int, default=10, help="Number of neurons. Used only when --unconditional is set.")
+    # common
     parser.add_argument("--gen_t", type=int, default=29, help="Duration of generated sample (time bins)")
-    parser.add_argument("--out", action="store_true", default=False, help="If specified, prints the report to stdout. Defaults to no output.")
-
+    
     args = parser.parse_args()
     print(args)
 
