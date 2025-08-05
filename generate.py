@@ -154,6 +154,8 @@ def test_generate(
     if args.unconditional:
         n_neurons = args.n_neurons
         sample = np.zeros((n_neurons, 1), dtype=np.uint8)
+        indices_to_set = np.random.choice(n_neurons, int(n_neurons * 0.1), replace=False)
+        sample[indices_to_set] = 1
     else:
         ds = load_dataset(ds_name, split=ds_split)
         logger.info(f"Dataset loaded (size: {len(ds)})")
@@ -265,7 +267,7 @@ if __name__ == "__main__":
     parser.add_argument("--ctx_t", type=int, default=1, help="Duration of prompt context (time bins)")
     # unconditional
     parser.add_argument("--unconditional", action="store_true", default=False, help="If set, samples will be generated unconditionally (default: conditional generation).")
-    parser.add_argument("--n_neurons", type=int, default=10, help="Number of neurons. Used only when --unconditional is set.")
+    parser.add_argument("--n_neurons", type=int, default=100, help="Number of neurons. Used only when --unconditional is set.")
     # common
     parser.add_argument("--gen_t", type=int, default=29, help="Duration of generated sample (time bins)")
     

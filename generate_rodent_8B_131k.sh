@@ -42,6 +42,6 @@ export MASTER_PORT=3442
 
 CONFIG_FILE=${CONFIG_FILE:-"./train_configs/rodent_8b_131k.toml"}
 
-srun torchrun --nnodes $SLURM_NNODES --nproc_per_node 8 --node_rank $SLURM_NODEID --rdzv_id 101 --rdzv_backend c10d --rdzv_endpoint "$MASTER_ADDR:$MASTER_PORT" ./generate.py --config ${CONFIG_FILE} --ckpt "outputs/rodent_8B_131k/checkpoint/step-19530" --unconditional
+srun torchrun --nnodes $SLURM_NNODES --nproc_per_node 8 --node_rank $SLURM_NODEID --rdzv_id 101 --rdzv_backend c10d --rdzv_endpoint "$MASTER_ADDR:$MASTER_PORT" ./generate.py --config ${CONFIG_FILE} --ckpt "outputs/rodent_8B_131k/checkpoint/step-20790" --unconditional
 
 echo "Done"
